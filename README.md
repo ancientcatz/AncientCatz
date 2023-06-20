@@ -7,9 +7,9 @@
 <a href="https://twitter.com/ancientcatz" target="blank"><img align="center" src="https://img.shields.io/badge/AncientCatz-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="ancientcatz" /></a>
 </p>
 
-- 🌱 I’m currently learning **JavaScript, C**
+- 🌱 I’m currently learning **JavaScript**
 
-- 📝 I regularly write articles on [ancientcatz.dev](https://ancientcatz.dev)
+- 📝 I occasionally write articles on [ancientcatz.dev](https://ancientcatz.dev)
 
 - 💬 Ask me about **Workflow automation, Web scraping, API, n8n**
 
