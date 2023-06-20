@@ -2,7 +2,7 @@
 <h1 align="center">Hi 👋, I'm Ling Yi</h1>
 <h3 align="center">A passionate backend developer from Indonesia</h3>
 
-<p c
+<p align="center">
 <img align="center" src="https://komarev.com/ghpvc/?username=ancientcatz&style=for-the-badge" alt="ancientcatz" />
 <a href="https://twitter.com/ancientcatz" target="blank"><img align="center" src="https://img.shields.io/badge/AncientCatz-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="ancientcatz" /></a>
 </p>
