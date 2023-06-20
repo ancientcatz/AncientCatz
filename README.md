@@ -7,13 +7,13 @@
 
 - 🌱 I’m currently learning **JavaScript, C**
 
-- 📝 I regularly write articles on [blog.ancientcatz.me](blog.ancientcatz.me)
+- 📝 I regularly write articles on [ancientcatz.dev](https://ancientcatz.dev)
 
-- 💬 Ask me about **Workflow automation, API, n8n**
+- 💬 Ask me about **Workflow automation, Web scraping, API, n8n**
 
 - 📫 How to reach me **mail@ancientcatz.eu.org**
 
-- 📄 Know about my experiences [ancientcatz.eu.org](ancientcatz.eu.org)
+- 📄 Know about my experiences [portfolio.ancz.dev](https://portfolio.ancz.dev)
 
 - ⚡ Fun fact **I love avocado 🥑**
 
