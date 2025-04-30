@@ -1,0 +1,96 @@
+# .github/workflows/update.yml
+name: Automated Asset Update
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 17 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Jakarta
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: "2"
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Install xmlstarlet
+        run: |
+          sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null << 'EOF'
+          path-exclude /usr/share/doc/*
+          path-exclude /usr/share/man/*
+          path-exclude /usr/share/info/*
+          EOF
+          sudo apt-get update
+          sudo apt-get install -y xmlstarlet
+
+      - name: Download assets
+        env:
+          S3_BASE_URL:  ${{ secrets.S3_BASE_URL }}
+        run: |
+          curl -sSL ${{ env.S3_BASE_URL }}/halftone.svg -o x/halftone.svg
+          curl -sSL ${{ env.S3_BASE_URL }}/halftone_inverse.svg -o x/halftone_inverse.svg
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          args: --timeout 5m
+
+      - name: Build
+        run: go build -v -o gitfetch .
+
+      - name: Prepare SVGs
+        run: |
+          for f in x/*_mode.svg; do
+            i=$( [[ "$f" == *dark* ]] && echo x/halftone_inverse.svg || echo x/halftone.svg )
+            out=./$(basename "$f")
+            ./x/insert.sh -f "$f" -i "$i" -x 20 -y 25 -w 360 -h 480 -o "$out"
+          done
+
+      - name: Run gitfetch
+        env:
+          CLICOLOR_FORCE: 1
+          DATE_OF_BIRTH:  ${{ secrets.DATE_OF_BIRTH }}
+          ACCESS_TOKEN:   ${{ secrets.ACCESS_TOKEN }}
+          USER_NAME:      ${{ secrets.USER_NAME }}
+        run: ./gitfetch
+
+      - name: Commit generated assets
+        env:
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ./*_mode.svg ./cache/*.txt
+          AUTHOR="$(git log -1 --pretty=format:'%an')"
+          MESSAGE="$(git log -1 --pretty=format:'%s')"
+          if [[ "$AUTHOR" == "github-actions[bot]" && "$MESSAGE" == "Automated assets update" ]]; then
+            git commit --amend -m "Automated assets update"
+            git push --force
+          else
+            git commit -m "Automated assets update"
+            git push
+          fi
