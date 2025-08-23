@@ -8,11 +8,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"slices"
+	_ "time/tzdata"
 
 	"github.com/beevik/etree"
 	"github.com/charmbracelet/log"
@@ -59,43 +59,57 @@ func plural(n int) string {
 	return ""
 }
 
+// age returns the full age difference between birthdate and today,
+// broken down into years, months, and days.
+func age(birthdate, today time.Time) (years, months, days int) {
+	// Normalize both dates to the same location and zero out the time portion
+	today = today.In(birthdate.Location())
+	y, m, d := today.Date()
+	today = time.Date(y, m, d, 0, 0, 0, 0, birthdate.Location())
+
+	by, bm, bd := birthdate.Date()
+	birthdate = time.Date(by, bm, bd, 0, 0, 0, 0, birthdate.Location())
+
+	// If birthdate is in the future, return zeros
+	if today.Before(birthdate) {
+		return 0, 0, 0
+	}
+
+	// Initial year, month, day differences
+	years = y - by
+	months = int(m - bm)
+	days = d - bd
+
+	// Adjust days and months if needed
+	if days < 0 {
+		// Borrow days from the previous month
+		prevMonth := today.AddDate(0, -1, 0)
+		_, pm, _ := prevMonth.Date()
+		// Get the number of days in that previous month
+		daysInPrevMonth := time.Date(prevMonth.Year(), pm+1, 0, 0, 0, 0, 0, birthdate.Location()).Day()
+		days += daysInPrevMonth
+		months--
+	}
+
+	if months < 0 {
+		months += 12
+		years--
+	}
+
+	return years, months, days
+}
+
 // dailyReadme returns the age string since birthday
 func dailyReadme(birthday time.Time) string {
-	now := time.Now()
+	today := time.Now()
+	y, mo, d := age(birthday, today)
 
-	if birthday.After(now) {
-		return "0 years, 0 months, 0 days"
-	}
-
-	years := now.Year() - birthday.Year()
-	anniversary := birthday.AddDate(years, 0, 0)
-	if anniversary.After(now) {
-		years--
-		anniversary = birthday.AddDate(years, 0, 0)
-	}
-
-	months := 0
-	for {
-		next := anniversary.AddDate(0, months+1, 0)
-		if next.After(now) {
-			break
-		}
-		months++
-	}
-	anniversary = anniversary.AddDate(0, months, 0)
-
-	days := int(now.Sub(anniversary).Hours() / 24)
-
-	s := fmt.Sprintf(
+	return fmt.Sprintf(
 		"%d year%s, %d month%s, %d day%s",
-		years, plural(years),
-		months, plural(months),
-		days, plural(days),
+		y, plural(y),
+		mo, plural(mo),
+		d, plural(d),
 	)
-	if months == 0 && days == 0 {
-		s += " 🎂"
-	}
-	return s
 }
 
 // loadBirthdayFromEnv reads environment variable envKey as YYYY-MM-DD and returns time.Time
@@ -553,6 +567,16 @@ func main() {
 		logger.Error("missing or invalid environment variable", "env", "DATE_OF_BIRTH", "error", err)
 		os.Exit(1)
 	}
+
+	now := time.Now()
+	zone, offset := now.Zone()
+
+	slog.Info("current_time",
+		"time", now.String(),
+		"timestamp", now.Format(time.RFC3339),
+		"zone", zone,
+		"offset_sec", offset,
+	)
 
 	// userGetter
 	start := time.Now()
